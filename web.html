@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DNA to Protein Translator</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #3498db;
+      --secondary: #2ecc71;
+      --dark: #2c3e50;
+      --light: #ecf0f1;
+      --danger: #e74c3c;
+      --warning: #f39c12;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--dark);
+    }
+    
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    h2 {
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2rem;
+      position: relative;
+    }
+    
+    h2::after {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: var(--secondary);
+      border-radius: 2px;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+    
+    textarea {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1em;
+      transition: border 0.3s;
+      font-family: 'Courier New', monospace;
+      resize: vertical;
+    }
+    
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    
+    button {
+      flex: 1;
+      padding: 12px 15px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+    }
+    
+    .btn-secondary {
+      background: #e0e0e0;
+      color: var(--dark);
+    }
+    
+    .btn-secondary:hover {
+      background: #d0d0d0;
+    }
+    
+    .output-container {
+      margin-top: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .output-header {
+      background: var(--primary);
+      color: white;
+      padding: 12px 15px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .output {
+      background: #f8f9fa;
+      padding: 20px;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .codon-display {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .codon-item {
+      background: #e8f5e9;
+      padding: 10px 15px;
+      border-radius: 8px;
+      border-left: 4px solid var(--secondary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .codon-item.stop {
+      background: #ffebee;
+      border-left-color: var(--danger);
+    }
+    
+    .codon-item.start {
+      background: #e3f2fd;
+      border-left-color: var(--primary);
+    }
+    
+    .protein-summary {
+      margin-top: 20px;
+      background: #f1f8e9;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid var(--secondary);
+    }
+    
+    .protein-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 10px 0 0;
+    }
+    
+    .protein-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .protein-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .loader {
+      display: none;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .info-box {
+      background: #e3f2fd;
+      border-left: 4px solid var(--primary);
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+    
+    .info-box h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: var(--primary);
+    }
+    
+    .sequence-stats {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    
+    .stat-item {
+      background: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      flex: 1;
+      min-width: 100px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    .stat-label {
+      font-size: 0.8rem;
+      color: #666;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+      
+      .button-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>DNA to Protein Translator</h2>
+    
+    <div class="info-box">
+      <h4><i class="fas fa-info-circle"></i> How to use</h4>
+      <p>Enter a DNA sequence using only A, T, G, and C. The translator will convert it to RNA and show the corresponding amino acids.</p>
+    </div>
+    
+    <div class="input-group">
+      <label for="dnaInput"><i class="fas fa-dna"></i> Enter a DNA sequence:</label>
+      <textarea id="dnaInput" rows="3" placeholder="Example: ATGGCCATTGAATGA"></textarea>
+      <div id="sequenceError" class="hidden" style="color: var(--danger); margin-top: 5px;"></div>
+    </div>
+    
+    <div class="button-group">
+      <button id="translateBtn" class="btn-primary" onclick="translateDNA()">
+        <i class="fas fa-play"></i> Translate
+        <div class="loader" id="translateLoader"></div>
+      </button>
+      <button class="btn-secondary" onclick="clearAll()">
+        <i class="fas fa-trash"></i> Clear
+      </button>
+      <button class="btn-secondary" onclick="loadExample()">
+        <i class="fas fa-lightbulb"></i> Load Example
+      </button>
+    </div>
+    
+    <div id="resultsContainer" class="hidden">
+      <div class="sequence-stats" id="sequenceStats"></div>
+      
+      <div class="output-container">
+        <div class="output-header">
+          <span><i class="fas fa-dna"></i> RNA Sequence</span>
+          <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.8rem;" onclick="copyRna()">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+        </div>
+        <div class="output" id="rnaOutput"></div>
+      </div>
+      
+      <div class="output-container" style="margin-top: 20px;">
+        <div class="output-header">
+          <span><i class="fas fa-vial"></i> Codon Translation</span>
+        </div>
+        <div class="output" id="codonOutput"></div>
+      </div>
+      
+      <div class="protein-summary" id="proteinSummary"></div>
+    </div>
+  </div>
+
+  <script>
+    const codonTable = {
+      UUU: 'Phenylalanine', UUC: 'Phenylalanine',
+      UUA: 'Leucine', UUG: 'Leucine', CUU: 'Leucine', CUC: 'Leucine', CUA: 'Leucine', CUG: 'Leucine',
+      AUU: 'Isoleucine', AUC: 'Isoleucine', AUA: 'Isoleucine',
+      AUG: 'Methionine (Start)',
+      GUU: 'Valine', GUC: 'Valine', GUA: 'Valine', GUG: 'Valine',
+      UCU: 'Serine', UCC: 'Serine', UCA: 'Serine', UCG: 'Serine', AGU: 'Serine', AGC: 'Serine',
+      CCU: 'Proline', CCC: 'Proline', CCA: 'Proline', CCG: 'Proline',
+      ACU: 'Threonine', ACC: 'Threonine', ACA: 'Threonine', ACG: 'Threonine',
+      GCU: 'Alanine', GCC: 'Alanine', GCA: 'Alanine', GCG: 'Alanine',
+      UAU: 'Tyrosine', UAC: 'Tyrosine',
+      UAA: 'STOP', UAG: 'STOP', UGA: 'STOP',
+      CAU: 'Histidine', CAC: 'Histidine',
+      CAA: 'Glutamine', CAG: 'Glutamine',
+      AAU: 'Asparagine', AAC: 'Asparagine',
+      AAA: 'Lysine', AAG: 'Lysine',
+      GAU: 'Aspartic acid', GAC: 'Aspartic acid',
+      GAA: 'Glutamic acid', GAG: 'Glutamic acid',
+      UGU: 'Cysteine', UGC: 'Cysteine',
+      UGG: 'Tryptophan',
+      CGU: 'Arginine', CGC: 'Arginine', CGA: 'Arginine', CGG: 'Arginine', AGA: 'Arginine', AGG: 'Arginine',
+      GGU: 'Glycine', GGC: 'Glycine', GGA: 'Glycine', GGG: 'Glycine'
+    };
+    
+    // Single letter amino acid codes
+    const aminoAcidCodes = {
+      'Phenylalanine': 'F',
+      'Leucine': 'L',
+      'Isoleucine': 'I',
+      'Methionine (Start)': 'M',
+      'Valine': 'V',
+      'Serine': 'S',
+      'Proline': 'P',
+      'Threonine': 'T',
+      'Alanine': 'A',
+      'Tyrosine': 'Y',
+      'STOP': '*',
+      'Histidine': 'H',
+      'Glutamine': 'Q',
+      'Asparagine': 'N',
+      'Lysine': 'K',
+      'Aspartic acid': 'D',
+      'Glutamic acid': 'E',
+      'Cysteine': 'C',
+      'Tryptophan': 'W',
+      'Arginine': 'R',
+      'Glycine': 'G'
+    };
+    
+    function validateDNA(dna) {
+      return /^[ATGC]+$/i.test(dna);
+    }
+    
+    function translateDNA() {
+      const dnaInput = document.getElementById("dnaInput").value.toUpperCase().replace(/\s/g, '');
+      const errorDiv = document.getElementById("sequenceError");
+      
+      if (!dnaInput) {
+        errorDiv.textContent = "Please enter a DNA sequence.";
+        errorDiv.classList.remove("hidden");
+        return;
+      }
+      
+      if (!validateDNA(dnaInput)) {
+        errorDiv.textContent = "Invalid DNA sequence. Please use only A, T, G, and C.";
+        errorDiv.classList.remove("hidden");
+        return;
+      }
+      
+      errorDiv.classList.add("hidden");
+      
+      // Show loader
+      document.getElementById("translateLoader").style.display = "block";
+      document.getElementById("translateBtn").disabled = true;
+      
+      setTimeout(() => {
+        processTranslation(dnaInput);
+        document.getElementById("translateLoader").style.display = "none";
+        document.getElementById("translateBtn").disabled = false;
+      }, 500); // Simulate processing time for better UX
+    }
+    
+    function processTranslation(dna) {
+      // Convert DNA to RNA
+      let rna = dna.replace(/T/g, 'U');
+      document.getElementById("rnaOutput").textContent = formatSequence(rna);
+      
+      // Process codons
+      let codonOutput = document.getElementById("codonOutput");
+      codonOutput.innerHTML = '';
+      
+      let proteins = [];
+      let codonDisplay = document.createElement('div');
+      codonDisplay.className = 'codon-display';
+      
+      for (let i = 0; i < rna.length; i += 3) {
+        let codon = rna.substring(i, i+3);
+        if (codon.length < 3) break;
+        
+        let protein = codonTable[codon] || 'Unknown';
+        let codonItem = document.createElement('div');
+        codonItem.className = 'codon-item';
+        
+        if (protein === 'STOP') {
+          codonItem.classList.add('stop');
+        } else if (protein === 'Methionine (Start)') {
+          codonItem.classList.add('start');
+        }
+        
+        const shortCode = protein !== 'Unknown' ? aminoAcidCodes[protein] || '?' : '?';
+        codonItem.innerHTML = `<strong>${codon}</strong> → ${shortCode} <span style="font-size: 0.8rem;">(${protein})</span>`;
+        codonDisplay.appendChild(codonItem);
+        
+        if (protein === 'STOP') break;
+        if (protein !== 'Unknown') proteins.push(protein);
+      }
+      
+      codonOutput.appendChild(codonDisplay);
+      
+      // Display protein summary
+      let proteinSummary = document.getElementById("proteinSummary");
+      proteinSummary.innerHTML = `
+        <h4><i class="fas fa-microscope"></i> Proteins Synthesized</h4>
+        <ul class="protein-list">
+          ${proteins.map(p => `<li>${p} (${aminoAcidCodes[p]})</li>`).join('')}
+        </ul>
+        <div style="margin-top: 15px;">
+          <strong>Single Letter Sequence:</strong> 
+          <span style="font-family: monospace; font-size: 1.2rem;">
+            ${proteins.map(p => aminoAcidCodes[p]).join('')}
+          </span>
+        </div>
+      `;
+      
+      // Show sequence stats
+      updateSequenceStats(dna, rna, proteins);
+      
+      // Show results container
+      document.getElementById("resultsContainer").classList.remove("hidden");
+    }
+    
+    function updateSequenceStats(dna, rna, proteins) {
+      const stats = document.getElementById("sequenceStats");
+      
+      // Calculate base percentages
+      const baseCount = {A: 0, T: 0, G: 0, C: 0};
+      for (let i = 0; i < dna.length; i++) {
+        baseCount[dna[i]]++;
+      }
+      
+      const gcContent = ((baseCount.G + baseCount.C) / dna.length * 100).toFixed(1);
+      
+      stats.innerHTML = `
+        <div class="stat-item">
+          <div class="stat-value">${dna.length}</div>
+          <div class="stat-label">Nucleotides</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">${Math.floor(dna.length / 3)}</div>
+          <div class="stat-label">Codons</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">${proteins.length}</div>
+          <div class="stat-label">Amino Acids</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">${gcContent}%</div>
+          <div class="stat-label">GC Content</div>
+        </div>
+      `;
+    }
+    
+    function formatSequence(seq) {
+      // Format sequence in blocks of 10 with spaces
+      let formatted = '';
+      for (let i = 0; i < seq.length; i++) {
+        if (i > 0 && i % 10 === 0) formatted += ' ';
+        if (i > 0 && i % 50 === 0) formatted += '\n';
+        formatted += seq[i];
+      }
+      return formatted;
+    }
+    
+    function clearAll() {
+      document.getElementById("dnaInput").value = '';
+      document.getElementById("sequenceError").classList.add("hidden");
+      document.getElementById("resultsContainer").classList.add("hidden");
+    }
+    
+    function loadExample() {
+      // Example DNA sequence that codes for a small peptide
+      document.getElementById("dnaInput").value = "ATGGCCATGGAATTAGCCATGACCATGACCTGA";
+      translateDNA();
+    }
+    
+    function copyRna() {
+      const rnaText = document.getElementById("rnaOutput").textContent;
+      navigator.clipboard.writeText(rnaText.replace(/\s/g, ''))
+        .then(() => {
+          alert("RNA sequence copied to clipboard!");
+        })
+        .catch(err => {
+          console.error('Could not copy text: ', err);
+        });
+    }
+    
+    // Initialize
+    document.getElementById("dnaInput").addEventListener("input", function() {
+      document.getElementById("sequenceError").classList.add("hidden");
+    });
+  </script>
+</body>
+</html>
